@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "device": "desktop",
+  "root": { "route": "/painel" },
+  "sections": [
+    { "id": "auth", "name": "Autenticação" },
+    { "id": "b2b", "name": "Painel (B2B)" },
+    { "id": "club", "name": "Clube VIP (B2B)" },
+    { "id": "states", "name": "Carregamento e erro" },
+    { "id": "brand", "name": "Marca white-label" },
+    { "id": "b2c", "name": "App do cliente (B2C)" }
+  ],
+  "screens": {
+    "scr_login": { "name": "Entrar", "route": "/entrar", "section": "auth", "state": {} },
+    "scr_login_error": { "name": "Entrar · senha incorreta", "route": "/entrar", "section": "auth", "state": { "loginError": true, "email": "rafael@padariaaurora.com.br" } },
+    "scr_signup": { "name": "Criar conta", "route": "/cadastro", "section": "auth", "state": {} },
+    "scr_client_login_phone": { "name": "Cliente · entrar com celular", "route": "/c/padaria-aurora/entrar", "section": "auth", "state": {}, "device": "mobile" },
+    "scr_client_login_code": { "name": "Cliente · código SMS", "route": "/c/padaria-aurora/entrar", "section": "auth", "state": { "step": "code" }, "device": "mobile" },
+    "scr_client_login_code_error": { "name": "Cliente · código incorreto", "route": "/c/padaria-aurora/entrar", "section": "auth", "state": { "step": "code", "codeError": true }, "device": "mobile" },
+
+    "scr_dashboard": { "name": "Início", "route": "/painel", "section": "b2b", "state": {} },
+    "scr_dashboard_mobile_menu": { "name": "Início · menu mobile", "route": "/painel", "section": "b2b", "state": { "menuOpen": true }, "device": "mobile" },
+    "scr_copilot": { "name": "Copiloto · nova conversa", "route": "/painel/copiloto", "section": "b2b", "state": {} },
+    "scr_copilot_chat": { "name": "Copiloto · conversa", "route": "/painel/copiloto", "section": "b2b", "state": { "conversation": true } },
+    "scr_inventory": { "name": "Estoque", "route": "/painel/estoque", "section": "b2b", "state": {} },
+    "scr_inventory_add": { "name": "Estoque · adicionar produto", "route": "/painel/estoque", "section": "b2b", "state": { "addOpen": true } },
+    "scr_inventory_empty": { "name": "Estoque · sem resultados", "route": "/painel/estoque", "section": "b2b", "state": { "query": "chocolate" } },
+
+    "scr_club_missions": { "name": "Clube · missões", "route": "/painel/clube", "section": "club", "state": { "tab": "missoes" } },
+    "scr_club_new_mission": { "name": "Clube · criar missão", "route": "/painel/clube", "section": "club", "state": { "tab": "missoes", "newMission": true } },
+    "scr_club_rewards": { "name": "Clube · recompensas", "route": "/painel/clube", "section": "club", "state": { "tab": "recompensas" } },
+    "scr_club_subscribers": { "name": "Clube · assinantes Black", "route": "/painel/clube", "section": "club", "state": { "tab": "assinantes" } },
+
+    "scr_dashboard_loading": { "name": "Início · carregando", "route": "/painel", "section": "states", "state": { "dataState": "loading" } },
+    "scr_inventory_loading": { "name": "Estoque · carregando", "route": "/painel/estoque", "section": "states", "state": { "dataState": "loading" } },
+    "scr_inventory_error": { "name": "Estoque · erro", "route": "/painel/estoque", "section": "states", "state": { "dataState": "error" } },
+    "scr_club_loading": { "name": "Clube · carregando", "route": "/painel/clube", "section": "states", "state": { "dataState": "loading" } },
+    "scr_client_loading": { "name": "Cliente · carregando", "route": "/c/padaria-aurora", "section": "states", "state": { "dataState": "loading" }, "device": "mobile" },
+    "scr_client_error": { "name": "Cliente · erro", "route": "/c/padaria-aurora", "section": "states", "state": { "dataState": "error" }, "device": "mobile" },
+
+    "scr_brand": { "name": "Cor da marca · Verde", "route": "/painel/configuracoes", "section": "brand", "state": { "brand": "#16794c" } },
+    "scr_brand_white": { "name": "Cor da marca · Branco", "route": "/painel/configuracoes", "section": "brand", "state": { "brand": "#ffffff" } },
+    "scr_brand_amber": { "name": "Cor da marca · Âmbar", "route": "/painel/configuracoes", "section": "brand", "state": { "brand": "#f2a516" } },
+
+    "scr_client_home": { "name": "Cliente · Início", "route": "/c/padaria-aurora", "section": "b2c", "state": {}, "device": "mobile" },
+    "scr_client_missions": { "name": "Cliente · Missões", "route": "/c/padaria-aurora", "section": "b2c", "state": { "tab": "missoes" }, "device": "mobile" },
+    "scr_client_secret_menu": { "name": "Cliente · Menu secreto bloqueado", "route": "/c/padaria-aurora", "section": "b2c", "state": { "tab": "menu" }, "device": "mobile" },
+    "scr_client_black": { "name": "Cliente · assinar Black", "route": "/c/padaria-aurora/black", "section": "b2c", "state": {}, "device": "mobile" },
+    "scr_client_black_success": { "name": "Cliente · Black ativo", "route": "/c/padaria-aurora/black", "section": "b2c", "state": { "success": true }, "device": "mobile" },
+    "scr_client_redeem": { "name": "Cliente · Resgatar", "route": "/c/padaria-aurora", "section": "b2c", "state": { "tab": "recompensas", "redeem": "r1" }, "device": "mobile" }
+  },
+  "edges": [],
+  "layers": []
+}
+

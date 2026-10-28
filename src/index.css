@@ -1,0 +1,99 @@
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap");
+@import "tailwindcss";
+@source "./";
+
+/*
+  SmartBiz AI design tokens (shadcn/ui naming).
+  Neutrals are fixed. The brand family is white-label: ThemeScope writes
+  --brand-* per tenant, computed for contrast in src/theme/color.ts.
+*/
+
+@theme {
+  /* Typography */
+  --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, monospace;
+
+  /* Surfaces and text */
+  --color-background: #f6f6f7;
+  --color-card: #ffffff;
+  --color-popover: #ffffff;
+  --color-foreground: #18181b;
+  --color-muted: #f1f1f3;
+  --color-muted-foreground: #6b6b73;
+  --color-subtle-foreground: #8b8b93;
+  --color-border: #e6e6e9;
+  --color-input: #dcdce0;
+  --color-secondary: #f1f1f3;
+  --color-secondary-foreground: #18181b;
+  --color-overlay: #18181b66;
+  --color-skeleton: #ececef;
+  --color-tier-black: #111113;
+
+  /* Status (text-safe on white) */
+  --color-destructive: #c62828;
+  --color-destructive-soft: #fdecec;
+  --color-success: #15803d;
+  --color-success-soft: #e8f5ec;
+  --color-warning: #a35200;
+  --color-warning-soft: #fdf1e2;
+
+  /* Radius */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.25rem;
+
+  /* Elevation */
+  --shadow-xs: 0 1px 2px 0 #18181b0a;
+  --shadow-card: 0 1px 2px 0 #18181b08, 0 2px 8px -2px #18181b0a;
+  --shadow-float: 0 1px 2px 0 #18181b0a, 0 12px 32px -8px #18181b1f;
+  --shadow-overlay: 0 4px 12px -2px #18181b14, 0 24px 48px -12px #18181b29;
+}
+
+/* Brand family: resolved at the element ThemeScope styles */
+@theme inline {
+  --color-primary: var(--brand);
+  --color-primary-foreground: var(--brand-fg);
+  --color-primary-hover: var(--brand-hover);
+  --color-primary-border: var(--brand-border);
+  --color-primary-soft: var(--brand-soft);
+  --color-primary-text: var(--brand-text);
+  --color-ring: var(--brand-ring);
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes sheet-left {
+  from { opacity: 0; transform: translateX(-16px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes sheet-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes pop-in {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@theme {
+  --animate-fade-in: fade-in 180ms ease-out;
+  --animate-sheet-left: sheet-left 220ms ease-out;
+  --animate-sheet-up: sheet-up 240ms ease-out;
+  --animate-pop-in: pop-in 180ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-name: fade-in !important; }
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--color-background);
+  color: var(--color-foreground);
+  -webkit-font-smoothing: antialiased;
+}
+

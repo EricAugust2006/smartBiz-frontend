@@ -1,0 +1,32 @@
+{
+  "protocol": 1,
+  "template": "react-tailwind",
+  "migratedFrom": null,
+  "build": {
+    "entry": "src/main.tsx",
+    "command": "build",
+    "cssEntry": "src/index.css"
+  },
+  "anchoring": "babel-data-figr-anchor",
+  "capabilities": {
+    "figmaExport": "supported",
+    "selectAndEdit": "supported",
+    "capture": "supported",
+    "commentsPins": "supported",
+    "urlBar": "supported"
+  },
+  "manualEdit": {
+    "inspect": "supported",
+    "setText": "supported",
+    "setStyle": "supported",
+    "setToken": "supported",
+    "move": "supported",
+    "delete": "supported",
+    "instanceIdentity": "supported"
+  },
+  "runtime": {
+    "mountNodeId": "root",
+    "routingModel": "browser-router"
+  }
+}
+
