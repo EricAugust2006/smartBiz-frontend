@@ -417,7 +417,13 @@ export function Avatar({ initials, className }: { initials: string; className?: 
   );
 }
 
-export function TenantMark({ size = "md" }: { size?: "sm" | "md" }) {
+export function TenantMark({
+  size = "md",
+  initial = tenant.name.charAt(0),
+}: {
+  size?: "sm" | "md";
+  initial?: string;
+}) {
   return (
     <span
       className={cn(
@@ -425,7 +431,7 @@ export function TenantMark({ size = "md" }: { size?: "sm" | "md" }) {
         size === "sm" ? "h-8 w-8 rounded-lg text-sm" : "h-10 w-10 rounded-xl text-base",
       )}
     >
-      {tenant.name.charAt(0)}
+      {initial}
     </span>
   );
 }

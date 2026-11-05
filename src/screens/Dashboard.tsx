@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowRight, ArrowUpRight } from "lucide-react";
 import {
@@ -21,7 +23,6 @@ import {
   CardHeader,
   ErrorState,
   Skeleton,
-  toast,
 } from "../components/ui";
 import { useMockQuery } from "../lib/useMockQuery";
 import {
@@ -34,9 +35,19 @@ import {
 } from "../data";
 import { useScreenInit } from "../useScreenInit";
 import { useThemeStore } from "../store/useThemeStore";
+import { useToast } from "@/components/ui/toaster";
 
 export default function Dashboard() {
   const init = useScreenInit();
+  return (
+    <DashboardLayout initialMenuOpen={init.menuOpen === true}>
+      <DashboardContent />
+    </DashboardLayout>
+  );
+}
+
+export function DashboardContent() {
+  const { toast } = useToast();
   const products = useInventoryStore((s) => s.products);
   // SVG attributes can't read CSS variables, so the chart takes the resolved brand token
   const accent = useThemeStore((s) => s.tokens.text);
@@ -65,7 +76,7 @@ export default function Dashboard() {
       title: `${urgent.length} produtos vencem até amanhã`,
       body: `${namesText} somam ${brl(urgentValue)} em estoque. Um combo com café no fim da tarde ajuda a escoar.`,
       action: "Criar promoção",
-      onClick: () => toast("Promoção criada para hoje até 19h"),
+      onClick: () => toast({ title: "Promoção criada para hoje até 19h" }),
       primary: true,
     },
     {
@@ -83,7 +94,7 @@ export default function Dashboard() {
   ];
 
   return (
-    <DashboardLayout initialMenuOpen={init.menuOpen === true}>
+    <>
       <PageHeader title="Início" />
 
       {q.isLoading ? (
@@ -274,7 +285,7 @@ export default function Dashboard() {
           </Card>
         </div>
       )}
-    </DashboardLayout>
+    </>
   );
 }
 

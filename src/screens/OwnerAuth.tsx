@@ -1,8 +1,10 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { Button, Field, Input, ThemeScope, cn } from "../components/ui";
+import { createTenant, getApiErrorMessage, login } from "../lib/api";
+import { useAuthStore } from "../store/useAuthStore";
 import { useScreenInit } from "../useScreenInit";
 
 /* Platform-level screens: SmartBiz's own ink brand, not the tenant's */
@@ -48,14 +50,25 @@ const emailOk = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.trim());
 export function OwnerLogin() {
   const init = useScreenInit();
   const router = useRouter();
-  const [email, setEmail] = useState(typeof init.email === "string" ? init.email : "");
+  const [email, setEmail] = useState(
+    typeof router.query.email === "string"
+      ? router.query.email
+      : typeof init.email === "string"
+        ? init.email
+        : "",
+  );
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<{ email?: string; password?: string; form?: string }>(
     init.loginError === true ? { form: "E-mail ou senha incorretos. Confira os dados ou redefina sua senha." } : {},
   );
   const [busy, setBusy] = useState(false);
+  const setSession = useAuthStore((s) => s.setSession);
 
-  const submit = () => {
+  useEffect(() => {
+    if (typeof router.query.email === "string") setEmail(router.query.email);
+  }, [router.query.email]);
+
+  const submit = async () => {
     const e: typeof errors = {};
     if (!emailOk(email)) e.email = "Informe um e-mail válido, como voce@padaria.com.br";
     if (!password) e.password = "Informe sua senha";
@@ -64,13 +77,27 @@ export function OwnerLogin() {
       document.getElementById(e.email ? "email" : "password")?.focus();
       return;
     }
+    setErrors({});
     setBusy(true);
-    setTimeout(() => router.push("/painel"), 800);
+    try {
+      const session = await login(email.trim(), password);
+      setSession(session);
+      await router.push("/painel");
+    } catch (error) {
+      setErrors({ form: getApiErrorMessage(error, "Não foi possível entrar. Tente novamente.") });
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
     <AuthShell title="Entrar no painel" footer={<>Ainda não tem conta? <Link href="/cadastro" className="font-medium text-foreground underline-offset-4 hover:underline">Criar conta</Link></>}>
       <form className="flex flex-col gap-4" noValidate onSubmit={(e) => { e.preventDefault(); submit(); }}>
+        {router.query.cadastro === "sucesso" && (
+          <p role="status" className="rounded-lg border border-success/30 bg-success-soft px-3 py-2.5 text-[13px] text-success">
+            Conta criada. Entre com seu e-mail e senha para continuar.
+          </p>
+        )}
         {errors.form && (
           <p role="alert" className="rounded-lg border border-destructive/30 bg-destructive-soft px-3 py-2.5 text-[13px] text-destructive">{errors.form}</p>
         )}
@@ -85,7 +112,7 @@ export function OwnerLogin() {
           <PasswordInput id="password" autoComplete="current-password" value={password} onChange={setPassword} invalid={!!errors.password} />
           {errors.password && <p className="text-[13px] text-destructive">{errors.password}</p>}
         </div>
-        <Button type="submit" size="lg" className="mt-2 w-full" aria-busy={busy}>
+        <Button type="submit" size="lg" className="mt-2 w-full" aria-busy={busy} disabled={busy}>
           {busy && <Loader2 size={16} className="animate-spin" />}
           Entrar
         </Button>
@@ -102,16 +129,21 @@ export function OwnerSignup() {
   const router = useRouter();
   const [f, setF] = useState({ name: "", business: "", email: "", password: "" });
   const [terms, setTerms] = useState(false);
-  const [errors, setErrors] = useState<Partial<Record<"name" | "business" | "email" | "password" | "terms", string>>>({});
+  const [errors, setErrors] = useState<Partial<Record<"name" | "business" | "email" | "password" | "terms" | "form", string>>>({});
   const [busy, setBusy] = useState(false);
   const slug = slugify(f.business);
 
-  const submit = () => {
+  const submit = async () => {
     const e: typeof errors = {};
     if (!f.name.trim()) e.name = "Informe seu nome";
+    else if (f.name.trim().length > 120) e.name = "Use no máximo 120 caracteres";
     if (!f.business.trim()) e.business = "Informe o nome do estabelecimento";
+    else if (!slug || slug.length > 80) e.business = "Informe um nome que gere um endereço válido (até 80 caracteres)";
+    else if (f.business.trim().length > 120) e.business = "Use no máximo 120 caracteres";
     if (!emailOk(f.email)) e.email = "Informe um e-mail válido, como voce@padaria.com.br";
+    else if (f.email.trim().length > 254) e.email = "Use um e-mail com até 254 caracteres";
     if (f.password.length < 8) e.password = "A senha precisa ter pelo menos 8 caracteres";
+    else if (f.password.length > 128) e.password = "Use uma senha com até 128 caracteres";
     if (!terms) e.terms = "Aceite os termos para continuar";
     setErrors(e);
     const first = (["name", "business", "email", "password", "terms"] as const).find((k) => e[k]);
@@ -119,13 +151,33 @@ export function OwnerSignup() {
       document.getElementById("su-" + first)?.focus();
       return;
     }
+    setErrors({});
     setBusy(true);
-    setTimeout(() => router.push("/painel"), 900);
+    try {
+      await createTenant({
+        name: f.business.trim(),
+        slug,
+        ownerName: f.name.trim(),
+        email: f.email.trim(),
+        password: f.password,
+      });
+      await router.push({
+        pathname: "/entrar",
+        query: { email: f.email.trim(), cadastro: "sucesso" },
+      });
+    } catch (error) {
+      setErrors({ form: getApiErrorMessage(error, "Não foi possível criar sua conta. Tente novamente.") });
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
     <AuthShell title="Criar conta" footer={<>Já tem conta? <Link href="/entrar" className="font-medium text-foreground underline-offset-4 hover:underline">Entrar</Link></>}>
       <form className="flex flex-col gap-4" noValidate onSubmit={(e) => { e.preventDefault(); submit(); }}>
+        {errors.form && (
+          <p role="alert" className="rounded-lg border border-destructive/30 bg-destructive-soft px-3 py-2.5 text-[13px] text-destructive">{errors.form}</p>
+        )}
         <Field id="su-name" label="Seu nome" error={errors.name}>
           <Input id="su-name" autoComplete="name" value={f.name} invalid={!!errors.name} onChange={(e) => setF({ ...f, name: e.target.value })} />
         </Field>
@@ -158,7 +210,7 @@ export function OwnerSignup() {
           </label>
           {errors.terms && <p className="text-[13px] text-destructive">{errors.terms}</p>}
         </div>
-        <Button type="submit" size="lg" className="mt-2 w-full" aria-busy={busy}>
+        <Button type="submit" size="lg" className="mt-2 w-full" aria-busy={busy} disabled={busy}>
           {busy && <Loader2 size={16} className="animate-spin" />}
           Criar conta
         </Button>
@@ -166,4 +218,3 @@ export function OwnerSignup() {
     </AuthShell>
   );
 }
-

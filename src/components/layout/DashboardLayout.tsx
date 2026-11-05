@@ -1,26 +1,25 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { Crown, LayoutDashboard, LogOut, Menu, MessagesSquare, Package, Settings, Smartphone, X } from "lucide-react";
+import { LogOut, Menu, Smartphone, X } from "lucide-react";
+import { PANEL_NAV as NAV } from "@/components/layout/panel-navigation";
 import { Avatar, Button, TenantMark, ThemeScope, Toaster, cn } from "../ui";
 import { tenant } from "../../data";
-
-const NAV = [
-  { to: "/painel", label: "Início", icon: LayoutDashboard, end: true },
-  { to: "/painel/copiloto", label: "Copiloto", icon: MessagesSquare, end: false },
-  { to: "/painel/estoque", label: "Estoque", icon: Package, end: false },
-  { to: "/painel/clube", label: "Clube VIP", icon: Crown, end: false },
-  { to: "/painel/configuracoes", label: "Configurações", icon: Settings, end: false },
-];
+import { ApiError, getApiErrorMessage, getCurrentTenant } from "../../lib/api";
+import { useAuthStore } from "../../store/useAuthStore";
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const router = useRouter();
+  const accountTenant = useAuthStore((s) => s.tenant);
+  const accountUser = useAuthStore((s) => s.user);
+  const clearSession = useAuthStore((s) => s.clearSession);
+  const currentTenant = accountTenant ?? tenant;
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-3 px-4 pt-5 pb-6">
-        <TenantMark />
+        <TenantMark initial={currentTenant.name.charAt(0)} />
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold tracking-tight">{tenant.name}</p>
+          <p className="truncate text-sm font-semibold tracking-tight">{currentTenant.name}</p>
           <p className="text-xs text-muted-foreground">SmartBiz AI</p>
         </div>
       </div>
@@ -47,26 +46,30 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
       <div className="mt-auto flex flex-col gap-1 px-3 pb-3">
         <Link
-          href={`/c/${tenant.slug}`}
+          href={`/c/${currentTenant.slug}`}
           className="flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
         >
           <Smartphone size={18} strokeWidth={1.75} />
           App do cliente
         </Link>
         <div className="mt-2 flex items-center gap-3 border-t border-border px-1 pt-4">
-          <Avatar initials={tenant.owner.initials} />
+          <Avatar initials={accountUser?.name.split(/\s+/).map((part) => part[0]).join("").slice(0, 2).toUpperCase() ?? tenant.owner.initials} />
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium">{tenant.owner.name}</p>
-            <p className="text-xs text-muted-foreground">{tenant.owner.role}</p>
+            <p className="truncate text-sm font-medium">{accountUser?.name ?? tenant.owner.name}</p>
+            <p className="text-xs text-muted-foreground">{accountUser?.role === "OWNER" ? "Proprietário" : accountUser?.role ?? tenant.owner.role}</p>
           </div>
-          <Link
-            href="/entrar"
+          <button
+            type="button"
+            onClick={() => {
+              clearSession();
+              void router.push("/login");
+            }}
             aria-label="Sair"
             title="Sair"
             className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground outline-none hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
           >
             <LogOut size={16} strokeWidth={1.75} />
-          </Link>
+          </button>
         </div>
       </div>
     </div>
@@ -74,8 +77,99 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 }
 
 export function DashboardLayout({ children, initialMenuOpen = false }: { children: ReactNode; initialMenuOpen?: boolean }) {
+  const router = useRouter();
   const [open, setOpen] = useState(initialMenuOpen);
   const [anim, setAnim] = useState(true);
+  const [authChecking, setAuthChecking] = useState(true);
+  const [authError, setAuthError] = useState("");
+  const [authRetry, setAuthRetry] = useState(0);
+  const {
+    accessToken,
+    hydrated,
+    tenantVerified,
+    setTenant,
+    clearSession,
+  } = useAuthStore();
+
+  useEffect(() => {
+    if (!router.isReady || !hydrated) return;
+    if (!accessToken) {
+      setAuthChecking(false);
+      void router.replace("/login");
+      return;
+    }
+    if (tenantVerified) {
+      setAuthChecking(false);
+      return;
+    }
+
+    let active = true;
+    setAuthChecking(true);
+    setAuthError("");
+    getCurrentTenant()
+      .then((currentTenant) => {
+        if (active) setTenant(currentTenant);
+      })
+      .catch((error: unknown) => {
+        if (!active) return;
+        if (error instanceof ApiError && error.status === 401) {
+          clearSession();
+          void router.replace("/login");
+          return;
+        }
+        setAuthError(getApiErrorMessage(error, "Não foi possível validar sua sessão."));
+      })
+      .finally(() => {
+        if (active) setAuthChecking(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [
+    accessToken,
+    authRetry,
+    clearSession,
+    hydrated,
+    router,
+    router.isReady,
+    setTenant,
+    tenantVerified,
+  ]);
+
+  if (!hydrated || authChecking || !accessToken) {
+    return (
+      <ThemeScope className="flex items-center justify-center px-6">
+        <p role="status" className="text-sm text-muted-foreground">
+          Validando sua sessão...
+        </p>
+      </ThemeScope>
+    );
+  }
+
+  if (authError) {
+    return (
+      <ThemeScope className="flex items-center justify-center px-6">
+        <div className="flex max-w-md flex-col items-center gap-4 text-center">
+          <p role="alert" className="text-sm text-destructive">{authError}</p>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setAuthRetry((value) => value + 1)}>
+              Tentar novamente
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                clearSession();
+                void router.replace("/login");
+              }}
+            >
+              Voltar ao login
+            </Button>
+          </div>
+        </div>
+      </ThemeScope>
+    );
+  }
 
   return (
     <ThemeScope>
@@ -129,4 +223,3 @@ export function PageHeader({ title, meta, action }: { title: string; meta?: Reac
     </div>
   );
 }
-

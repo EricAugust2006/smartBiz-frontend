@@ -1,1 +1,8 @@
-export { OwnerSignup as default } from "../src/screens/OwnerAuth";
+import type { GetServerSideProps } from "next";
+
+export const getServerSideProps: GetServerSideProps = async () => ({
+  redirect: { destination: "/register", permanent: false },
+});
+export default function LegacyRegister() {
+  return null;
+}

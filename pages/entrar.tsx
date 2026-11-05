@@ -1,1 +1,8 @@
-export { OwnerLogin as default } from "../src/screens/OwnerAuth";
+import type { GetServerSideProps } from "next";
+
+export const getServerSideProps: GetServerSideProps = async () => ({
+  redirect: { destination: "/login", permanent: false },
+});
+export default function LegacyLogin() {
+  return null;
+}
