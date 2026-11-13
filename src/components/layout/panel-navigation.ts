@@ -3,6 +3,7 @@ import {
   LayoutDashboard,
   MessagesSquare,
   Package,
+  PackageSearch,
   ReceiptText,
   Settings,
   Target,
@@ -14,6 +15,12 @@ export const PANEL_NAV = [
     to: "/painel/nova-venda",
     label: "Nova Venda",
     icon: ReceiptText,
+    end: false,
+  },
+  {
+    to: "/painel/produtos",
+    label: "Produtos",
+    icon: PackageSearch,
     end: false,
   },
   {

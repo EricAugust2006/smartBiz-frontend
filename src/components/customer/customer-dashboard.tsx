@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { CustomerAppShell } from "@/components/customer/customer-app-shell";
 import { CustomerDashboardSkeleton } from "@/components/customer/customer-dashboard-skeleton";
+import { QrRedemptionScanner } from "@/components/customer/qr-redemption-scanner";
 import { useB2CDashboard } from "@/hooks/use-b2c-dashboard";
 import { getRequestErrorMessage } from "@/lib/axios";
 import type { B2CDashboard } from "@/lib/customer-dashboard";
@@ -46,6 +47,7 @@ function CustomerDashboardContent({ data }: { data: B2CDashboard }) {
           Sua identificação no clube, em um toque.
         </p>
       </div>
+      <QrRedemptionScanner />
       <CustomerMissionList missions={data.missions} />
     </div>
   );
@@ -54,12 +56,19 @@ function CustomerDashboardContent({ data }: { data: B2CDashboard }) {
 export function CustomerDashboard() {
   const router = useRouter();
   const token = useB2CAuthStore((state) => state.token);
+  const tenantSlug = useB2CAuthStore((state) => state.tenantSlug);
   const hydrated = useB2CAuthStore((state) => state.hydrated);
   const dashboard = useB2CDashboard();
 
   useEffect(() => {
-    if (hydrated && !token) router.replace("/cliente/dev-login");
-  }, [hydrated, token, router]);
+    if (hydrated && !token) {
+      router.replace(
+        tenantSlug
+          ? `/loja/${encodeURIComponent(tenantSlug)}`
+          : "/cliente/dev-login",
+      );
+    }
+  }, [hydrated, token, tenantSlug, router]);
 
   if (!hydrated || !token || dashboard.isPending) {
     return (

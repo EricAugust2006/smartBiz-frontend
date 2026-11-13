@@ -53,13 +53,18 @@
 
 /* Brand family: resolved at the element ThemeScope styles */
 @theme inline {
-  --color-primary: var(--brand);
+  --color-primary: var(--theme-primary);
   --color-primary-foreground: var(--brand-fg);
   --color-primary-hover: var(--brand-hover);
   --color-primary-border: var(--brand-border);
   --color-primary-soft: var(--brand-soft);
   --color-primary-text: var(--brand-text);
   --color-ring: var(--brand-ring);
+  --color-sidebar: var(--theme-sidebar);
+  --color-sidebar-foreground: var(--theme-sidebar-foreground);
+  --color-header: var(--theme-header);
+  --color-header-foreground: var(--theme-header-foreground);
+  --color-foreground: var(--theme-text);
 }
 
 @keyframes fade-in {

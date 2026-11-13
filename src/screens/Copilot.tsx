@@ -200,7 +200,7 @@ export default function Copilot() {
           {empty ? (
             <div className="mx-auto flex h-full max-w-xl flex-col justify-center gap-6 px-6 py-10">
               <div className="flex flex-col gap-2">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-soft text-primary-text">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary-text">
                   <Bot size={20} strokeWidth={1.75} />
                 </span>
                 <h2 className="mt-2 text-xl font-semibold tracking-tight">
@@ -243,7 +243,7 @@ export default function Copilot() {
                     </p>
                   ) : (
                     <>
-                      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary-text">
+                      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary-text">
                         <Bot size={15} strokeWidth={1.75} />
                       </span>
                       <div className="flex min-w-0 max-w-xl flex-1 flex-col gap-3">
@@ -287,7 +287,7 @@ export default function Copilot() {
               ))}
               {thinking && (
                 <li className="flex animate-fade-in items-center gap-3">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary-soft text-primary-text">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary-text">
                     <Bot size={15} strokeWidth={1.75} />
                   </span>
                   <span className="text-sm text-muted-foreground">

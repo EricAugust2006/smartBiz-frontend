@@ -24,10 +24,10 @@ function PanelNavigation({ onNavigate }: { onNavigate?: () => void }) {
   const clearSession = useAuthStore((state) => state.clearSession);
 
   return (
-    <div className="flex h-full flex-col gap-6">
+    <div className="flex h-full flex-col gap-6 text-white">
       <div className="min-w-0 px-3 pt-3 pr-9">
         <p className="truncate text-sm font-semibold">{tenant?.name}</p>
-        <p className="text-xs text-muted-foreground">SmartBiz AI</p>
+        <p className="text-xs text-white/60">SmartBiz AI</p>
       </div>
       <nav aria-label="Principal" className="space-y-1">
         {PANEL_NAV.map(({ to, label, icon: Icon, end }) => {
@@ -41,8 +41,8 @@ function PanelNavigation({ onNavigate }: { onNavigate?: () => void }) {
               className={cn(
                 "flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring",
                 active
-                  ? "bg-primary-soft text-primary-text"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                  ? "bg-primary text-primary-foreground"
+                  : "text-sidebar-foreground/75 hover:bg-sidebar-foreground/10 hover:text-sidebar-foreground",
               )}
             >
               <Icon size={18} aria-hidden="true" />
@@ -51,12 +51,12 @@ function PanelNavigation({ onNavigate }: { onNavigate?: () => void }) {
           );
         })}
       </nav>
-      <div className="mt-auto border-t border-border pt-4">
+      <div className="mt-auto border-t border-white/15 pt-4">
         <p className="truncate px-3 text-sm font-medium">{user?.name}</p>
         <Button
           type="button"
           variant="ghost"
-          className="mt-2 w-full justify-start"
+          className="mt-2 w-full justify-start text-white/70 hover:bg-white/10 hover:text-white"
           onClick={() => {
             clearSession();
             router.replace("/login");
@@ -78,18 +78,18 @@ export function AppPanelShell({ children }: { children: ReactNode }) {
     <>
       <aside
         aria-label="Navegação do painel"
-        className="fixed bottom-4 left-4 top-4 z-30 hidden w-64 rounded-2xl border border-border bg-card p-3 shadow-float lg:block"
+        className="fixed bottom-4 left-4 top-4 z-30 hidden w-64 rounded-2xl border border-white/10 bg-sidebar p-3 shadow-float lg:block"
       >
         <PanelNavigation />
       </aside>
-      <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-border bg-card px-4 lg:hidden">
+      <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-border bg-header px-4 lg:hidden">
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
             <Button variant="ghost" size="icon" aria-label="Abrir menu">
               <Menu size={20} aria-hidden="true" />
             </Button>
           </SheetTrigger>
-          <SheetContent>
+          <SheetContent className="border-white/10 bg-sidebar text-white">
             <SheetTitle className="sr-only">Menu do painel</SheetTitle>
             <SheetDescription className="sr-only">
               Navegue entre as áreas da loja.

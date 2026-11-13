@@ -72,7 +72,7 @@ function MissionsPanel() {
   return (
     <div>
       {suggested.length > 0 && (
-        <div className="border-b border-border bg-primary-soft/40">
+        <div className="border-b border-border bg-primary/5">
           <p className="px-6 pt-4 text-[13px] font-medium text-primary-text">Sugeridas pela IA hoje</p>
           <ul className="divide-y divide-border">
             {suggested.map((m) => (

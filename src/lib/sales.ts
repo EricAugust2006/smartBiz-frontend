@@ -12,17 +12,27 @@ export const saleFormSchema = z.object({
   amount: z
     .string()
     .regex(/^\d{1,15}$/, "Informe um valor válido.")
-    .refine(
-      (value) => Number(value) > 0,
-      "O valor da venda deve ser de pelo menos R$ 0,01.",
-    )
     .transform((value) => Number(value) / 100),
-  customerPhone: customerPhoneSchema,
+  customerPhone: z
+    .union([z.literal(""), customerPhoneSchema])
+    .transform((value) => value || undefined),
 });
 
 export type SaleFormInput = z.input<typeof saleFormSchema>;
 export type SaleFormValues = z.output<typeof saleFormSchema>;
 export type CreateSaleInput = SaleFormValues & { idempotencyKey: string };
+
+export const saleResponseSchema = z.object({
+  redemption: z
+    .object({
+      url: z.url(),
+      expiresAt: z.iso.datetime({ offset: true }),
+    })
+    .nullable()
+    .optional(),
+});
+
+export type CreateSaleResponse = z.infer<typeof saleResponseSchema>;
 
 export const currencyFormatter = new Intl.NumberFormat("pt-BR", {
   style: "currency",

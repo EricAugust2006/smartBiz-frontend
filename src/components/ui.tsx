@@ -7,8 +7,7 @@ import {
   type ReactNode,
 } from "react";
 import { AlertCircle, RotateCw, X } from "lucide-react";
-import { useThemeStore } from "../store/useThemeStore";
-import { deriveBrand } from "../theme/color";
+import { useThemeVariables } from "@/hooks/use-theme-variables";
 import { tenant } from "../data";
 
 export const cn = (...c: (string | false | null | undefined)[]) =>
@@ -24,17 +23,7 @@ export function ThemeScope({
   className?: string;
   brandHex?: string;
 }) {
-  const tenantTokens = useThemeStore((s) => s.tokens);
-  const t = brandHex ? deriveBrand(brandHex) : tenantTokens;
-  const vars = {
-    "--brand": t.brand,
-    "--brand-fg": t.fg,
-    "--brand-hover": t.hover,
-    "--brand-border": t.border,
-    "--brand-soft": t.soft,
-    "--brand-text": t.text,
-    "--brand-ring": t.ring,
-  } as React.CSSProperties;
+  const vars = useThemeVariables(brandHex);
   return (
     <div
       style={vars}

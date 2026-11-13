@@ -3,10 +3,9 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { useB2CAuthStore } from "@/store/useB2CAuthStore";
 
 export const api = axios.create({
-  baseURL: (process.env.NEXT_PUBLIC_API_URL?.trim() || "http://localhost:3000").replace(
-    /\/+$/,
-    "",
-  ),
+  baseURL: (
+    process.env.NEXT_PUBLIC_API_URL?.trim() || "http://localhost:3000"
+  ).replace(/\/+$/, ""),
   timeout: 15_000,
   headers: { Accept: "application/json" },
 });
@@ -53,7 +52,8 @@ export const b2cApi = axios.create({
 
 b2cApi.interceptors.request.use((config) => {
   const token = useB2CAuthStore.getState().token;
-  if (token) config.headers.set("Authorization", `Bearer ${token}`);
+  if (token && config.url !== "/auth/b2c")
+    config.headers.set("Authorization", `Bearer ${token}`);
   else config.headers.delete("Authorization");
   return config;
 });

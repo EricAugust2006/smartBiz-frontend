@@ -1,343 +1,299 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, ArrowUpRight } from "lucide-react";
 import {
-  Area,
-  AreaChart,
-  CartesianGrid,
-  Line,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+  ArrowRight,
+  CircleDollarSign,
+  PackageSearch,
+  RefreshCw,
+  ReceiptText,
+  Target,
+  Users,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useDashboardMetrics } from "@/hooks/use-dashboard-metrics";
+import { getRequestErrorMessage } from "@/lib/axios";
 import {
-  DashboardLayout,
-  PageHeader,
-} from "../components/layout/DashboardLayout";
-import {
-  Badge,
-  Button,
-  Card,
-  CardHeader,
-  ErrorState,
-  Skeleton,
-} from "../components/ui";
-import { useMockQuery } from "../lib/useMockQuery";
-import {
-  brl,
-  daysUntil,
-  expiryLabel,
-  ordersToday,
-  salesByHour,
-  useInventoryStore,
-} from "../data";
-import { useScreenInit } from "../useScreenInit";
-import { useThemeStore } from "../store/useThemeStore";
-import { useToast } from "@/components/ui/toaster";
+  dashboardDateTimeFormatter,
+  dashboardMoneyFormatter,
+} from "@/lib/dashboard-metrics";
 
-export default function Dashboard() {
-  const init = useScreenInit();
-  return (
-    <DashboardLayout initialMenuOpen={init.menuOpen === true}>
-      <DashboardContent />
-    </DashboardLayout>
-  );
-}
-
-export function DashboardContent() {
-  const { toast } = useToast();
-  const products = useInventoryStore((s) => s.products);
-  // SVG attributes can't read CSS variables, so the chart takes the resolved brand token
-  const accent = useThemeStore((s) => s.tokens.text);
-  const q = useMockQuery("dashboard");
-
-  const expiring = products
-    .map((p) => ({ ...p, days: daysUntil(p.expires) }))
-    .filter((p) => p.days >= 0 && p.days <= 7)
-    .sort((a, b) => a.days - b.days);
-  const urgent = expiring.filter((p) => p.days <= 1);
-  const urgentNames = urgent.map((p) => p.name.split(" ")[0]);
-  const namesText =
-    urgentNames.length > 2
-      ? `${urgentNames.slice(0, 2).join(", ")} e mais ${urgentNames.length - 2}`
-      : urgentNames.join(" e ");
-  const urgentValue = urgent.reduce((s, p) => s + p.qty * p.price, 0);
-  const lowStock = products.filter((p) => p.qty < p.minQty);
-
-  const elapsed = salesByHour.filter((h) => h.today !== null);
-  const today = elapsed.reduce((s, h) => s + (h.today ?? 0), 0);
-  const yesterdaySame = elapsed.reduce((s, h) => s + h.yesterday, 0);
-  const delta = Math.round(((today - yesterdaySame) / yesterdaySame) * 100);
-
-  const insights = [
-    {
-      title: `${urgent.length} produtos vencem até amanhã`,
-      body: `${namesText} somam ${brl(urgentValue)} em estoque. Um combo com café no fim da tarde ajuda a escoar.`,
-      action: "Criar promoção",
-      onClick: () => toast({ title: "Promoção criada para hoje até 19h" }),
-      primary: true,
-    },
-    {
-      title: `${lowStock.length} itens abaixo do estoque mínimo`,
-      body: "Café em grãos acaba antes de sexta no ritmo atual de vendas da manhã.",
-      action: "Ver estoque",
-      to: "/painel/estoque",
-    },
-    {
-      title: "12 clientes VIP sem visita há 21 dias",
-      body: "Envie uma missão com pontos em dobro para trazê-los de volta nesta semana.",
-      action: "Revisar missão",
-      to: "/painel/clube",
-    },
-  ];
-
-  return (
-    <>
-      <PageHeader title="Início" />
-
-      {q.isLoading ? (
-        <DashboardSkeleton />
-      ) : q.isError ? (
-        <Card>
-          <ErrorState
-            title="Não foi possível carregar o resumo do dia"
-            onRetry={q.refetch}
-          />
-        </Card>
-      ) : (
-        <div className="grid gap-6 xl:grid-cols-3">
-          <Card className="xl:col-span-2">
-            <CardHeader title="Resumo do dia" meta="Gerado às 07:30 pela IA" />
-            <ol className="divide-y divide-border">
-              {insights.map((it, i) => (
-                <li
-                  key={it.title}
-                  className="flex flex-col gap-3 px-6 py-5 sm:flex-row sm:items-center sm:gap-6"
-                >
-                  <span className="hidden h-7 w-7 shrink-0 items-center justify-center rounded-full border border-border text-xs font-semibold text-muted-foreground tabular-nums sm:flex">
-                    {i + 1}
-                  </span>
-                  <div className="flex min-w-0 flex-1 flex-col gap-1">
-                    <p className="text-[15px] font-medium tracking-tight">
-                      {it.title}
-                    </p>
-                    <p className="text-sm leading-relaxed text-muted-foreground">
-                      {it.body}
-                    </p>
-                  </div>
-                  {it.to ? (
-                    <Link href={it.to} className="shrink-0">
-                      <Button variant="outline" size="sm" tabIndex={-1}>
-                        {it.action}
-                      </Button>
-                    </Link>
-                  ) : (
-                    <Button
-                      variant={it.primary ? "primary" : "outline"}
-                      size="sm"
-                      onClick={it.onClick}
-                    >
-                      {it.action}
-                    </Button>
-                  )}
-                </li>
-              ))}
-            </ol>
-          </Card>
-
-          <Card className="flex flex-col">
-            <CardHeader
-              title="Vencem em 7 dias"
-              meta={`${expiring.length} produtos`}
-            />
-            <ul className="flex-1 divide-y divide-border px-6">
-              {expiring.slice(0, 6).map((p) => (
-                <li key={p.id} className="flex items-center gap-4 py-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{p.name}</p>
-                    <p className="text-[13px] text-muted-foreground tabular-nums">
-                      {p.qty} {p.unit}
-                    </p>
-                  </div>
-                  <Badge tone={p.days <= 1 ? "warning" : "neutral"}>
-                    {expiryLabel(p.days)}
-                  </Badge>
-                </li>
-              ))}
-            </ul>
-            <div className="border-t border-border px-6 py-3">
-              <Link
-                href="/painel/estoque?filtro=vencendo"
-                className="inline-flex items-center gap-1.5 text-sm font-medium text-primary-text hover:underline"
-              >
-                Ver todos no estoque <ArrowRight size={16} />
-              </Link>
-            </div>
-          </Card>
-
-          <Card className="xl:col-span-3">
-            <div className="flex flex-wrap items-start justify-between gap-6 px-6 pt-5">
-              <h2 className="text-[15px] font-semibold tracking-tight">
-                Vendas
-              </h2>
-              <div className="flex items-center gap-4 text-[13px] text-muted-foreground">
-                <span className="flex items-center gap-2">
-                  <span className="h-0.5 w-4 rounded-full bg-primary-text" />
-                  Hoje
-                </span>
-                <span className="flex items-center gap-2">
-                  <span className="h-0.5 w-4 border-t-2 border-dashed border-subtle-foreground" />
-                  Ontem
-                </span>
-              </div>
-            </div>
-            <dl className="flex flex-wrap gap-x-12 gap-y-4 px-6 pt-4">
-              <div>
-                <dt className="text-[13px] text-muted-foreground">
-                  Faturamento até 15h
-                </dt>
-                <dd className="mt-1 flex items-baseline gap-2">
-                  <span className="text-2xl font-semibold tracking-tight tabular-nums">
-                    {brl(today)}
-                  </span>
-                  <span className="inline-flex items-center text-[13px] font-medium text-success">
-                    <ArrowUpRight size={14} />
-                    {delta}% vs ontem
-                  </span>
-                </dd>
-              </div>
-              <div>
-                <dt className="text-[13px] text-muted-foreground">Pedidos</dt>
-                <dd className="mt-1 text-2xl font-semibold tracking-tight tabular-nums">
-                  {ordersToday}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-[13px] text-muted-foreground">
-                  Ticket médio
-                </dt>
-                <dd className="mt-1 text-2xl font-semibold tracking-tight tabular-nums">
-                  {brl(today / ordersToday)}
-                </dd>
-              </div>
-            </dl>
-            <div className="h-64 px-2 pt-4 pb-4">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart
-                  data={salesByHour}
-                  margin={{ top: 8, right: 16, left: 4, bottom: 0 }}
-                >
-                  <defs>
-                    <linearGradient id="fillToday" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={accent} stopOpacity={0.14} />
-                      <stop offset="100%" stopColor={accent} stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid vertical={false} stroke="#e6e6e9" />
-                  <XAxis
-                    dataKey="hour"
-                    tickLine={false}
-                    axisLine={false}
-                    tick={{ fontSize: 12, fill: "#6b6b73" }}
-                  />
-                  <YAxis
-                    tickLine={false}
-                    axisLine={false}
-                    width={56}
-                    tick={{ fontSize: 12, fill: "#6b6b73" }}
-                    tickFormatter={(v) => `R$ ${v}`}
-                  />
-                  <Tooltip
-                    cursor={{ stroke: "#dcdce0" }}
-                    formatter={(v, name) => [
-                      brl(Number(v)),
-                      name === "today" ? "Hoje" : "Ontem",
-                    ]}
-                    contentStyle={{
-                      borderRadius: 10,
-                      border: "1px solid var(--color-border)",
-                      boxShadow: "var(--shadow-card)",
-                      fontSize: 13,
-                    }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="yesterday"
-                    stroke="#8b8b93"
-                    strokeDasharray="4 4"
-                    strokeWidth={1.5}
-                    dot={false}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="today"
-                    stroke={accent}
-                    strokeWidth={2}
-                    fill="url(#fillToday)"
-                    connectNulls={false}
-                    dot={false}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </Card>
-        </div>
-      )}
-    </>
-  );
-}
+const shortcuts = [
+  {
+    href: "/painel/nova-venda",
+    label: "Nova Venda",
+    description: "Registrar uma compra no PDV",
+    icon: ReceiptText,
+  },
+  {
+    href: "/painel/produtos",
+    label: "Produtos",
+    description: "Gerenciar o catálogo da loja",
+    icon: PackageSearch,
+  },
+  {
+    href: "/painel/missoes",
+    label: "Desafios",
+    description: "Criar e acompanhar missões",
+    icon: Target,
+  },
+] as const;
 
 function DashboardSkeleton() {
   return (
-    <div
-      className="grid gap-6 xl:grid-cols-3"
-      aria-busy="true"
-      aria-label="Carregando resumo"
-    >
-      <Card className="xl:col-span-2">
-        <div className="px-6 pt-5 pb-4">
-          <Skeleton className="h-5 w-40" />
-        </div>
-        {[0, 1, 2].map((i) => (
-          <div
-            key={i}
-            className="flex items-center gap-6 border-t border-border px-6 py-5"
-          >
-            <Skeleton className="h-7 w-7 rounded-full" />
-            <div className="flex flex-1 flex-col gap-2">
-              <Skeleton className="h-4 w-2/5" />
-              <Skeleton className="h-3.5 w-4/5" />
-            </div>
-            <Skeleton className="h-8 w-28" />
-          </div>
+    <div className="space-y-6" aria-label="Carregando painel" aria-busy="true">
+      <span className="sr-only">Carregando métricas e vendas recentes…</span>
+      <section
+        className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-4"
+        aria-label="Métricas"
+      >
+        {Array.from({ length: 4 }, (_, index) => (
+          <Card key={index} aria-hidden="true">
+            <CardContent className="space-y-4 p-5">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-8 w-40" />
+              <Skeleton className="h-10 w-10 rounded-xl" />
+            </CardContent>
+          </Card>
         ))}
-      </Card>
-      <Card>
-        <div className="px-6 pt-5 pb-4">
-          <Skeleton className="h-5 w-32" />
-        </div>
-        <div className="flex flex-col divide-y divide-border px-6">
-          {[0, 1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="flex items-center gap-4 py-3">
-              <div className="flex flex-1 flex-col gap-2">
-                <Skeleton className="h-4 w-3/5" />
-                <Skeleton className="h-3 w-12" />
+      </section>
+      <section className="grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(280px,0.8fr)]">
+        <Card aria-hidden="true" className="p-5 sm:p-6">
+          <Skeleton className="mb-6 h-6 w-44" />
+          <div className="space-y-4">
+            {[0, 1, 2].map((item) => (
+              <div
+                key={item}
+                className="flex justify-between gap-4 border-b border-border pb-4"
+              >
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-36" />
+                  <Skeleton className="h-3 w-48" />
+                </div>
+                <Skeleton className="h-5 w-20" />
               </div>
-              <Skeleton className="h-5 w-16 rounded-full" />
-            </div>
-          ))}
+            ))}
+          </div>
+        </Card>
+        <Card aria-hidden="true" className="p-5 sm:p-6">
+          <Skeleton className="mb-6 h-6 w-36" />
+          <div className="space-y-3">
+            {[0, 1, 2].map((item) => (
+              <Skeleton key={item} className="h-20 w-full rounded-xl" />
+            ))}
+          </div>
+        </Card>
+      </section>
+    </div>
+  );
+}
+
+function MetricCard({
+  label,
+  value,
+  icon: Icon,
+}: {
+  label: string;
+  value: string;
+  icon: typeof CircleDollarSign;
+}) {
+  return (
+    <Card>
+      <CardContent className="flex items-start justify-between gap-3 p-5">
+        <div className="min-w-0">
+          <p className="text-sm text-muted-foreground">{label}</p>
+          <p className="mt-3 truncate text-2xl font-semibold tracking-tight tabular-nums">
+            {value}
+          </p>
         </div>
-      </Card>
-      <Card className="xl:col-span-3">
-        <div className="px-6 pt-5 pb-4">
-          <Skeleton className="h-5 w-24" />
-        </div>
-        <div className="px-6 pb-6">
-          <Skeleton className="h-64 w-full" />
-        </div>
-      </Card>
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary-text">
+          <Icon size={19} aria-hidden="true" />
+        </span>
+      </CardContent>
+    </Card>
+  );
+}
+
+function QuickShortcutsCard() {
+  return (
+    <Card>
+      <CardHeader className="pb-4">
+        <CardTitle>Atalhos rápidos</CardTitle>
+        <p className="text-sm text-muted-foreground">
+          Acesse as tarefas mais usadas no painel.
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-3 pt-0">
+        {shortcuts.map(({ href, label, description, icon: Icon }) => (
+          <Link
+            key={href}
+            href={href}
+            className="group flex min-h-20 items-center gap-3 rounded-xl border border-border bg-card p-4 outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-primary-text">
+              <Icon size={19} aria-hidden="true" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-semibold">{label}</span>
+              <span className="mt-1 block text-xs text-muted-foreground">
+                {description}
+              </span>
+            </span>
+            <ArrowRight
+              size={17}
+              className="shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5"
+              aria-hidden="true"
+            />
+          </Link>
+        ))}
+      </CardContent>
+    </Card>
+  );
+}
+
+export default function Dashboard() {
+  return <DashboardContent />;
+}
+
+export function DashboardContent() {
+  const metrics = useDashboardMetrics();
+  const data = metrics.data;
+
+  return (
+    <div className="mx-auto max-w-7xl space-y-6">
+      <header className="rounded-2xl border border-border bg-[var(--theme-header)] p-5 shadow-card sm:p-6">
+        <p className="text-sm text-muted-foreground">Painel da loja</p>
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight">
+          Visão geral
+        </h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Acompanhe os resultados e as vendas recentes da sua loja.
+        </p>
+      </header>
+
+      {metrics.isLoading ? (
+        <DashboardSkeleton />
+      ) : (
+        <>
+          {metrics.isError && (
+            <Card role="alert" className="p-5">
+              <p className="text-sm text-destructive">
+                {getRequestErrorMessage(
+                  metrics.error,
+                  data
+                    ? "Não foi possível atualizar as métricas. Os últimos dados carregados foram mantidos."
+                    : "Não foi possível carregar as métricas do painel. Confira sua conexão e tente novamente.",
+                )}
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={metrics.isFetching}
+                onClick={() => void metrics.refetch()}
+                className="mt-3"
+              >
+                <RefreshCw
+                  size={16}
+                  className={metrics.isFetching ? "animate-spin" : undefined}
+                  aria-hidden="true"
+                />
+                Tentar novamente
+              </Button>
+            </Card>
+          )}
+
+          {data && (
+            <>
+              <section
+                aria-label="Métricas da loja"
+                className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-4"
+              >
+                <MetricCard
+                  label="Receita Total"
+                  value={dashboardMoneyFormatter.format(
+                    Number(data.totalRevenue),
+                  )}
+                  icon={CircleDollarSign}
+                />
+                <MetricCard
+                  label="Receita do Mês"
+                  value={dashboardMoneyFormatter.format(
+                    Number(data.monthlyRevenue),
+                  )}
+                  icon={CircleDollarSign}
+                />
+                <MetricCard
+                  label="Total de Clientes"
+                  value={data.totalCustomers.toLocaleString("pt-BR")}
+                  icon={Users}
+                />
+                <MetricCard
+                  label="Missões Ativas"
+                  value={data.activeMissions.toLocaleString("pt-BR")}
+                  icon={Target}
+                />
+              </section>
+
+              <section className="grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(280px,0.8fr)]">
+                <Card className="min-w-0">
+                  <CardHeader className="flex-row items-center justify-between gap-3 pb-4">
+                    <div>
+                      <CardTitle>Vendas Recentes</CardTitle>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        As últimas vendas registradas na loja.
+                      </p>
+                    </div>
+                    <ReceiptText
+                      className="shrink-0 text-primary-text"
+                      size={20}
+                      aria-hidden="true"
+                    />
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    {data.recentSales.length ? (
+                      <ol className="divide-y divide-border">
+                        {data.recentSales.map((sale) => (
+                          <li
+                            key={sale.id}
+                            className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 py-4 first:pt-1 last:pb-1"
+                          >
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-medium">
+                                {sale.customer?.name ?? "Cliente avulso"}
+                              </p>
+                              <p className="mt-1 truncate text-xs text-muted-foreground">
+                                {sale.customer?.phone ?? "Sem telefone"} ·{" "}
+                                {dashboardDateTimeFormatter.format(
+                                  new Date(sale.createdAt),
+                                )}
+                              </p>
+                            </div>
+                            <span className="shrink-0 text-sm font-semibold tabular-nums">
+                              {dashboardMoneyFormatter.format(
+                                Number(sale.amount),
+                              )}
+                            </span>
+                          </li>
+                        ))}
+                      </ol>
+                    ) : (
+                      <p className="py-10 text-center text-sm text-muted-foreground">
+                        Nenhuma venda recente.
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <QuickShortcutsCard />
+              </section>
+            </>
+          )}
+
+          {!data && metrics.isError && <QuickShortcutsCard />}
+        </>
+      )}
     </div>
   );
 }

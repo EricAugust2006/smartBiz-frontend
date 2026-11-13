@@ -22,23 +22,6 @@ export type Product = {
   price: number;
 };
 
-const seed: Product[] = [
-  { id: "p1", sku: "LAT-014", name: "Iogurte natural 170 g", category: "Laticínios", qty: 12, unit: "un", minQty: 10, expires: "2026-05-14", price: 6.9 },
-  { id: "p2", sku: "PAD-003", name: "Croissant amanteigado", category: "Padaria", qty: 18, unit: "un", minQty: 20, expires: "2026-05-15", price: 8.5 },
-  { id: "p3", sku: "LAT-002", name: "Queijo minas frescal", category: "Laticínios", qty: 4, unit: "kg", minQty: 3, expires: "2026-05-15", price: 49.9 },
-  { id: "p4", sku: "CON-021", name: "Torta de limão (fatia)", category: "Confeitaria", qty: 9, unit: "un", minQty: 6, expires: "2026-05-17", price: 14.0 },
-  { id: "p5", sku: "LAT-009", name: "Leite integral 1 L", category: "Laticínios", qty: 26, unit: "L", minQty: 24, expires: "2026-05-19", price: 5.79 },
-  { id: "p6", sku: "BEB-011", name: "Suco de laranja 300 ml", category: "Bebidas", qty: 7, unit: "un", minQty: 12, expires: "2026-05-20", price: 9.0 },
-  { id: "p7", sku: "PAD-001", name: "Pão francês", category: "Padaria", qty: 140, unit: "un", minQty: 120, expires: "2026-05-14", price: 0.9 },
-  { id: "p8", sku: "CAF-001", name: "Café em grãos 1 kg", category: "Cafeteria", qty: 3, unit: "kg", minQty: 5, expires: "2026-09-30", price: 89.0 },
-  { id: "p9", sku: "PAD-007", name: "Pão de queijo congelado", category: "Padaria", qty: 6, unit: "kg", minQty: 4, expires: "2026-08-12", price: 42.0 },
-  { id: "p10", sku: "CON-004", name: "Bolo de cenoura", category: "Confeitaria", qty: 5, unit: "un", minQty: 3, expires: "2026-05-18", price: 32.0 },
-  { id: "p11", sku: "MER-030", name: "Geleia de morango 320 g", category: "Mercearia", qty: 22, unit: "un", minQty: 8, expires: "2027-01-10", price: 18.9 },
-  { id: "p12", sku: "MER-012", name: "Mel silvestre 500 g", category: "Mercearia", qty: 11, unit: "un", minQty: 6, expires: "2027-11-02", price: 34.5 },
-  { id: "p13", sku: "BEB-004", name: "Água com gás 500 ml", category: "Bebidas", qty: 48, unit: "un", minQty: 24, expires: "2027-03-01", price: 4.5 },
-  { id: "p14", sku: "LAT-020", name: "Manteiga com sal 200 g", category: "Laticínios", qty: 2, unit: "un", minQty: 6, expires: "2026-07-22", price: 15.9 },
-];
-
 type InventoryState = {
   products: Product[];
   add: (p: Omit<Product, "id">) => void;
@@ -46,7 +29,7 @@ type InventoryState = {
 };
 
 export const useInventoryStore = create<InventoryState>((set) => ({
-  products: seed,
+  products: [],
   add: (p) => set((s) => ({ products: [{ ...p, id: "p" + (s.products.length + 1) + Date.now() }, ...s.products] })),
   setQty: (id, qty) => set((s) => ({ products: s.products.map((p) => (p.id === id ? { ...p, qty } : p)) })),
 }));
