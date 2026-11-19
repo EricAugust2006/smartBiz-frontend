@@ -3,7 +3,6 @@ import {
   LayoutDashboard,
   MessagesSquare,
   Package,
-  PackageSearch,
   ReceiptText,
   Settings,
   Target,
@@ -18,18 +17,12 @@ export const PANEL_NAV = [
     end: false,
   },
   {
-    to: "/painel/produtos",
-    label: "Produtos",
-    icon: PackageSearch,
-    end: false,
-  },
-  {
     to: "/painel/copiloto",
     label: "Copiloto",
     icon: MessagesSquare,
     end: false,
   },
-  { to: "/painel/estoque", label: "Estoque", icon: Package, end: false },
+  { to: "/painel/estoque", label: "Estoque e Produtos", icon: Package, end: false },
   { to: "/painel/clube", label: "Clube VIP", icon: Crown, end: false },
   {
     to: "/painel/missoes",

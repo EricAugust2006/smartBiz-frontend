@@ -5,6 +5,8 @@ import {
   ArrowRight,
   CircleDollarSign,
   PackageSearch,
+  AlertTriangle,
+  Clock3,
   RefreshCw,
   ReceiptText,
   Target,
@@ -28,7 +30,7 @@ const shortcuts = [
     icon: ReceiptText,
   },
   {
-    href: "/painel/produtos",
+    href: "/painel/estoque",
     label: "Produtos",
     description: "Gerenciar o catálogo da loja",
     icon: PackageSearch,
@@ -234,6 +236,11 @@ export function DashboardContent() {
                   value={data.activeMissions.toLocaleString("pt-BR")}
                   icon={Target}
                 />
+              </section>
+
+              <section className="grid gap-4 sm:grid-cols-2" aria-label="Alertas de estoque">
+                <Link href="/painel/estoque?filtro=baixo"><MetricCard label="Estoque baixo" value={String(data.inventoryAlerts.lowStockCount)} icon={AlertTriangle} /></Link>
+                <Link href="/painel/estoque?filtro=vencendo"><MetricCard label="Vencendo ou vencidos" value={String(data.inventoryAlerts.expiringSoonCount)} icon={Clock3} /></Link>
               </section>
 
               <section className="grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(280px,0.8fr)]">

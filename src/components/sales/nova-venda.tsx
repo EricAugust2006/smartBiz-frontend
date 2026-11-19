@@ -139,13 +139,16 @@ export function NovaVenda() {
       const idempotencyKey =
         previous?.tenantId === tenantId &&
         previous.amount === amount &&
-        previous.customerPhone === values.customerPhone
+        previous.customerPhone === values.customerPhone &&
+        JSON.stringify(previous.items) ===
+          JSON.stringify(cart.map(({ product, quantity }) => ({ productId: product.id, quantity })))
           ? previous.idempotencyKey
           : uuidv4();
       const payload: CreateSaleInput = {
         ...values,
         amount,
         idempotencyKey,
+        items: cart.map(({ product, quantity }) => ({ productId: product.id, quantity })),
       };
       pendingSale.current = { ...payload, tenantId };
       await sale.mutateAsync(payload);
@@ -283,6 +286,9 @@ export function NovaVenda() {
                               productPriceInCents(product.price) / 100,
                             )}
                           </p>
+                          {product.trackStock && <p className="text-xs text-muted-foreground">Saldo: {product.quantity}</p>}
+                          {product.trackStock && product.quantity <= 0 && <p className="text-xs font-medium text-destructive">Sem saldo disponível; venda permitida.</p>}
+                          {product.trackStock && product.quantity > 0 && product.quantity <= product.minQuantity && <p className="text-xs font-medium text-warning">Saldo baixo.</p>}
                         </div>
                         <Button
                           type="button"

@@ -3,6 +3,7 @@ import type { AppProps } from "next/app";
 import "../src/index.css";
 import { B2B_SESSION_KEY, useAuthStore } from "../src/store/useAuthStore";
 import { THEME_STORAGE_KEY, useThemeStore } from "../src/store/useThemeStore";
+import { AppProviders } from "../src/components/providers/app-providers";
 
 export default function NextApp({ Component, pageProps }: AppProps) {
   useEffect(() => {
@@ -21,5 +22,5 @@ export default function NextApp({ Component, pageProps }: AppProps) {
     return () => window.removeEventListener("storage", onStorage);
   }, []);
 
-  return <Component {...pageProps} />;
+  return <AppProviders><Component {...pageProps} /></AppProviders>;
 }

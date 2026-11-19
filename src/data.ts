@@ -1,8 +1,5 @@
 import { create } from "zustand";
 
-// Fixed "today" so relative dates stay stable in the prototype.
-export const TODAY = new Date(2026, 4, 14);
-
 export const tenant = {
   name: "Padaria Aurora",
   slug: "padaria-aurora",
@@ -10,49 +7,7 @@ export const tenant = {
   owner: { name: "Rafael Fonseca", initials: "RF", role: "Proprietário" },
 };
 
-export type Product = {
-  id: string;
-  sku: string;
-  name: string;
-  category: string;
-  qty: number;
-  unit: "un" | "kg" | "L";
-  minQty: number;
-  expires: string; // yyyy-mm-dd
-  price: number;
-};
-
-type InventoryState = {
-  products: Product[];
-  add: (p: Omit<Product, "id">) => void;
-  setQty: (id: string, qty: number) => void;
-};
-
-export const useInventoryStore = create<InventoryState>((set) => ({
-  products: [],
-  add: (p) => set((s) => ({ products: [{ ...p, id: "p" + (s.products.length + 1) + Date.now() }, ...s.products] })),
-  setQty: (id, qty) => set((s) => ({ products: s.products.map((p) => (p.id === id ? { ...p, qty } : p)) })),
-}));
-
-export function daysUntil(date: string): number {
-  const [y, m, d] = date.split("-").map(Number);
-  const target = new Date(y, m - 1, d);
-  return Math.round((target.getTime() - TODAY.getTime()) / 86400000);
-}
-
-export function expiryLabel(days: number): string {
-  if (days < 0) return "Vencido";
-  if (days === 0) return "Hoje";
-  if (days === 1) return "Amanhã";
-  return `Em ${days} dias`;
-}
-
 export const brl = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-
-export function formatDate(date: string): string {
-  const [y, m, d] = date.split("-");
-  return `${d}/${m}/${y}`;
-}
 
 // Sales by hour: today (until 15h) vs yesterday
 export const salesByHour = [

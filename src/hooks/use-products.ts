@@ -3,8 +3,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/axios";
 import {
-  normalizeProductPrice,
   productListSchema,
+  productPriceFromCents,
   type Product,
   type ProductFormValues,
 } from "@/lib/products";
@@ -50,7 +50,11 @@ export function useCreateProduct() {
     mutationFn: async (values: ProductFormValues): Promise<void> => {
       await api.post("/products", {
         ...values,
-        price: normalizeProductPrice(values.price),
+        price: productPriceFromCents(values.price),
+        costPrice: productPriceFromCents(values.costPrice),
+        quantity: Number(values.quantity || 0),
+        minQuantity: Number(values.minQuantity || 0),
+        expiresAt: values.expiresAt || null,
       });
     },
     onSuccess: () => {
@@ -70,11 +74,15 @@ export function useUpdateProduct() {
       values,
     }: {
       id: string;
-      values: ProductFormValues & { isActive: boolean };
+      values: Partial<ProductFormValues> & { isActive?: boolean };
     }): Promise<void> => {
       await api.patch(`/products/${encodeURIComponent(id)}`, {
         ...values,
-        price: normalizeProductPrice(values.price),
+        ...(values.price !== undefined ? { price: productPriceFromCents(values.price) } : {}),
+        ...(values.costPrice !== undefined ? { costPrice: productPriceFromCents(values.costPrice) } : {}),
+        ...(values.quantity !== undefined ? { quantity: Number(values.quantity || 0) } : {}),
+        ...(values.minQuantity !== undefined ? { minQuantity: Number(values.minQuantity || 0) } : {}),
+        ...(values.expiresAt !== undefined ? { expiresAt: values.expiresAt || null } : {}),
       });
     },
     onSuccess: () => {

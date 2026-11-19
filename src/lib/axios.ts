@@ -88,8 +88,77 @@ export function getRequestErrorMessage(
 ): string {
   if (!axios.isAxiosError<unknown>(error)) return fallback;
   if (error.response?.status === 401)
-    return "Sua sessão expirou. Entre novamente para continuar.";
+    return "Sua sess\u00e3o expirou. Entre novamente para continuar.";
   if (error.response?.status === 403)
-    return "Sua conta não tem permissão para realizar esta ação.";
+    return "Sua conta n\u00e3o tem permiss\u00e3o para realizar esta a\u00e7\u00e3o.";
+
+  const status = error.response?.status;
+  if (!error.response || error.code === "ECONNABORTED")
+    return "N\u00e3o foi poss\u00edvel conectar ao servidor. Confira sua conex\u00e3o e tente novamente.";
+
+  const body = error.response.data;
+  const rawMessage =
+    body && typeof body === "object" && "message" in body
+      ? (body as { message?: unknown }).message
+      : undefined;
+  const message = Array.isArray(rawMessage)
+    ? rawMessage
+        .filter((item): item is string => typeof item === "string")
+        .join(" ")
+    : typeof rawMessage === "string"
+      ? rawMessage.trim()
+      : "";
+
+  if (message && isPortugueseMessage(message)) return message;
+  if (message) {
+    const translated = translateCommonApiMessage(message, status);
+    if (translated) return translated;
+  }
+
+  if (status === 400 || status === 422)
+    return "Confira os dados informados e tente novamente.";
+  if (status === 404) return "O item solicitado n\u00e3o foi encontrado.";
+  if (status === 409) return "J\u00e1 existe um cadastro com esses dados.";
+  if (status === 429)
+    return "Muitas tentativas em pouco tempo. Aguarde um momento e tente novamente.";
+  if (status && status >= 500)
+    return "O servidor apresentou um problema. Tente novamente em instantes.";
   return fallback;
+}
+
+function isPortugueseMessage(message: string): boolean {
+  return /[\u00e1\u00e0\u00e2\u00e3\u00e9\u00ea\u00ed\u00f3\u00f4\u00f5\u00fa\u00e7]|\b(erro|produto|pre\u00e7o|informe|n\u00e3o|inv\u00e1lido|inv\u00e1lida|obrigat\u00f3rio|obrigat\u00f3ria|encontrado|encontrada|permiss\u00e3o|sess\u00e3o)\b/i.test(
+    message,
+  );
+}
+
+function translateCommonApiMessage(
+  message: string,
+  status?: number,
+): string | null {
+  const normalized = message.toLowerCase();
+  if (
+    normalized.includes("price") &&
+    (normalized.includes("number") || normalized.includes("numeric"))
+  )
+    return "O pre\u00e7o deve ser informado como um n\u00famero v\u00e1lido.";
+  if (
+    /network error|failed to fetch|request timeout|timed out/.test(normalized)
+  )
+    return "N\u00e3o foi poss\u00edvel conectar ao servidor. Confira sua conex\u00e3o e tente novamente.";
+  if (/not found|does not exist|was not found/.test(normalized))
+    return "O item solicitado n\u00e3o foi encontrado.";
+  if (
+    /already exists|already in use|duplicate|unique constraint/.test(normalized)
+  )
+    return "J\u00e1 existe um cadastro com esses dados.";
+  if (
+    /must be|should be|is required|are required|invalid|validation failed/.test(
+      normalized,
+    )
+  )
+    return "Confira os dados informados e tente novamente.";
+  if (status && status >= 500)
+    return "O servidor apresentou um problema. Tente novamente em instantes.";
+  return null;
 }

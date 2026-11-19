@@ -7,6 +7,10 @@ export const dashboardMetricsSchema = z.object({
   monthlyRevenue: decimalAmountSchema,
   totalCustomers: z.number().int().nonnegative(),
   activeMissions: z.number().int().nonnegative(),
+  inventoryAlerts: z.object({
+    lowStockCount: z.number().int().nonnegative(),
+    expiringSoonCount: z.number().int().nonnegative(),
+  }),
   recentSales: z.array(
     z.object({
       id: z.string().min(1),

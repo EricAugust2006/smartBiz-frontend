@@ -20,7 +20,10 @@ export const saleFormSchema = z.object({
 
 export type SaleFormInput = z.input<typeof saleFormSchema>;
 export type SaleFormValues = z.output<typeof saleFormSchema>;
-export type CreateSaleInput = SaleFormValues & { idempotencyKey: string };
+export type CreateSaleInput = SaleFormValues & {
+  idempotencyKey: string;
+  items: Array<{ productId: string; quantity: number }>;
+};
 
 export const saleResponseSchema = z.object({
   redemption: z
