@@ -1,14 +1,23 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { Plus, RefreshCw, Target } from "lucide-react";
 import { MissionCard } from "@/components/missions/mission-card";
-import { MissionFormSheet } from "@/components/missions/mission-form-sheet";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { LoadingFeedback } from "@/components/ui/loading-feedback";
 import { useMissions } from "@/hooks/use-missions";
 import { getRequestErrorMessage } from "@/lib/axios";
+
+const MissionFormSheet = dynamic(
+  () =>
+    import("@/components/missions/mission-form-sheet").then(
+      (module) => module.MissionFormSheet,
+    ),
+  { loading: () => <LoadingFeedback /> },
+);
 
 function MissionsSkeleton() {
   return (
@@ -78,17 +87,23 @@ export function MissionsManager() {
       </header>
 
       {missions.isLoading ? (
-        <MissionsSkeleton />
+        <div className="space-y-4">
+          <LoadingFeedback />
+          <MissionsSkeleton />
+        </div>
       ) : (
         <>
-          {missions.isError && (
+          {missions.isError && missions.data && (
+            <p role="status" className="text-xs text-muted-foreground">
+              Não foi possível atualizar as missões agora. Exibindo os dados carregados anteriormente.
+            </p>
+          )}
+          {missions.isError && !missions.data && (
             <Card role="alert" className="p-5">
               <p className="text-sm text-destructive">
                 {getRequestErrorMessage(
                   missions.error,
-                  missions.data
-                    ? "Não foi possível atualizar as missões. Os últimos dados carregados foram mantidos."
-                    : "Não foi possível carregar as missões. Verifique sua conexão e tente novamente.",
+                  "Não foi possível carregar as missões. Verifique sua conexão e tente novamente.",
                 )}
               </p>
               <Button
@@ -137,7 +152,7 @@ export function MissionsManager() {
           )}
         </>
       )}
-      <MissionFormSheet open={open} onOpenChange={setOpen} />
+      {open && <MissionFormSheet open={open} onOpenChange={setOpen} />}
     </div>
   );
 }

@@ -23,7 +23,7 @@ export const PANEL_NAV = [
     end: false,
   },
   { to: "/painel/estoque", label: "Estoque e Produtos", icon: Package, end: false },
-  { to: "/painel/clube", label: "Clube VIP", icon: Crown, end: false },
+  { to: "/painel/clube-vip", label: "Clube VIP", icon: Crown, end: false },
   {
     to: "/painel/missoes",
     label: "Missões e Desafios",

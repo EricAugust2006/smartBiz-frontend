@@ -8,6 +8,11 @@ import {
   type Product,
   type ProductFormValues,
 } from "@/lib/products";
+import {
+  getQueryCacheOptions,
+  invalidateCache,
+  setCachedQuery,
+} from "@/lib/query-cache";
 import { useAuthStore } from "@/store/useAuthStore";
 
 function useProductsScope() {
@@ -24,10 +29,12 @@ function useProductsScope() {
 export function useProducts(search = "", category = "") {
   const scope = useProductsScope();
   const normalizedSearch = search.trim();
+  const queryKey = [...scope.queryKey, { search: normalizedSearch, category }] as const;
   return useQuery({
-    queryKey: [...scope.queryKey, { search: normalizedSearch, category }],
+    queryKey,
     enabled: scope.enabled,
     retry: false,
+    ...getQueryCacheOptions<Product[]>(queryKey),
     queryFn: async ({ signal }): Promise<Product[]> => {
       const { data } = await api.get<unknown>("/products", {
         params: {
@@ -36,7 +43,9 @@ export function useProducts(search = "", category = "") {
         },
         signal,
       });
-      return productListSchema.parse(data);
+      const products = productListSchema.parse(data);
+      setCachedQuery(queryKey, products);
+      return products;
     },
   });
 }
@@ -58,7 +67,12 @@ export function useCreateProduct() {
       });
     },
     onSuccess: () => {
+      invalidateCache(["products", queryKey[1]]);
+      invalidateCache(["dashboard", "metrics", queryKey[1]]);
       void queryClient.invalidateQueries({ queryKey });
+      void queryClient.invalidateQueries({
+        queryKey: ["dashboard", "metrics", queryKey[1]],
+      });
     },
   });
 }
@@ -86,7 +100,12 @@ export function useUpdateProduct() {
       });
     },
     onSuccess: () => {
+      invalidateCache(["products", queryKey[1]]);
+      invalidateCache(["dashboard", "metrics", queryKey[1]]);
       void queryClient.invalidateQueries({ queryKey });
+      void queryClient.invalidateQueries({
+        queryKey: ["dashboard", "metrics", queryKey[1]],
+      });
     },
   });
 }

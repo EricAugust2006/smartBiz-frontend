@@ -28,7 +28,7 @@ export function ThemeScope({
     <div
       style={vars}
       className={cn(
-        "min-h-screen bg-background font-sans text-foreground",
+        "theme-scope min-h-screen bg-background font-sans text-foreground",
         className,
       )}
     >

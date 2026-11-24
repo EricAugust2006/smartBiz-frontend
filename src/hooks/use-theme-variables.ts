@@ -31,7 +31,6 @@ export function useThemeVariables(brandHex?: string): CSSProperties {
       "--theme-header-foreground": headerForeground,
       "--theme-primary": colors.primary,
       "--theme-text": colors.text,
-      "--color-foreground": colors.text,
     } as CSSProperties;
   }, [brandHex, colors, tokens]);
 }

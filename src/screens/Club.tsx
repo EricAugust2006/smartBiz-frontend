@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { Plus, Search } from "lucide-react";
@@ -7,6 +9,7 @@ import { brl } from "../data";
 import { BLACK_PRICE, mrr, useClubStore, type ClubMission } from "../store/useClubStore";
 import { useMockQuery } from "../lib/useMockQuery";
 import { useScreenInit } from "../useScreenInit";
+import { LoadingFeedback } from "@/components/ui/loading-feedback";
 
 type Tab = "missoes" | "recompensas" | "assinantes";
 
@@ -14,11 +17,30 @@ export default function Club() {
   const init = useScreenInit();
   const router = useRouter();
   const initialTab = (typeof init.tab === "string" ? init.tab : typeof router.query.aba === "string" ? router.query.aba : null) as Tab | null;
-  const [tab, setTab] = useState<Tab>(initialTab ?? "missoes");
-  useEffect(() => {
-    if (router.isReady && initialTab) setTab(initialTab);
-  }, [router.isReady, initialTab]);
-  const [newMission, setNewMission] = useState(init.newMission === true);
+  return (
+    <DashboardLayout>
+      <ClubContent
+        initialTab={initialTab ?? "missoes"}
+        initialNewMission={init.newMission === true}
+      />
+    </DashboardLayout>
+  );
+}
+
+export function ClubPanel() {
+  return <ClubContent initialTab="missoes" initialNewMission={false} />;
+}
+
+function ClubContent({
+  initialTab,
+  initialNewMission,
+}: {
+  initialTab: Tab;
+  initialNewMission: boolean;
+}) {
+  const [tab, setTab] = useState<Tab>(initialTab);
+  useEffect(() => setTab(initialTab), [initialTab]);
+  const [newMission, setNewMission] = useState(initialNewMission);
   const [newReward, setNewReward] = useState(false);
   const { missions, rewards, subscribers } = useClubStore();
   const q = useMockQuery("club");
@@ -38,7 +60,7 @@ export default function Club() {
     ) : null;
 
   return (
-    <DashboardLayout>
+    <>
       <PageHeader title="Clube VIP" action={action} />
 
       <Card>
@@ -46,7 +68,10 @@ export default function Club() {
           <SegmentTabs ariaLabel="Seções do clube" value={tab} onChange={setTab} options={tabs.map((t) => ({ value: t.id, label: <>{t.label}{q.status === "success" ? ` (${t.count})` : ""}</> }))} />
         </div>
         {q.isLoading ? (
-          <TableSkeleton rows={6} />
+          <div className="space-y-4 p-4">
+            <LoadingFeedback />
+            <TableSkeleton rows={6} />
+          </div>
         ) : q.isError ? (
           <ErrorState title="Não foi possível carregar o Clube VIP" onRetry={q.refetch} />
         ) : tab === "missoes" ? (
@@ -60,7 +85,7 @@ export default function Club() {
 
       <NewMissionDialog open={newMission} onClose={() => setNewMission(false)} />
       <NewRewardDialog open={newReward} onClose={() => setNewReward(false)} />
-    </DashboardLayout>
+    </>
   );
 }
 

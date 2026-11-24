@@ -57,7 +57,7 @@ export function RedemptionQrDialog({
           </div>
           {redemption && (
             <>
-              <div className="mx-auto my-5 flex w-fit items-center justify-center rounded-2xl border border-border bg-white p-4">
+              <div className="mx-auto my-5 flex w-fit items-center justify-center rounded-2xl border border-border bg-white p-4 dark:border-white/20">
                 <QRCodeSVG
                   value={redemption.url}
                   size={240}

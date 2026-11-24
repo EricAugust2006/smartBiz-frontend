@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { LoadingFeedback } from "@/components/ui/loading-feedback";
 import { useDashboardMetrics } from "@/hooks/use-dashboard-metrics";
 import { getRequestErrorMessage } from "@/lib/axios";
 import {
@@ -165,7 +166,7 @@ export function DashboardContent() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
-      <header className="rounded-2xl border border-border bg-[var(--theme-header)] p-5 shadow-card sm:p-6">
+      <header className="rounded-2xl border border-border bg-[var(--theme-header)] p-5 shadow-card dark:bg-card sm:p-6">
         <p className="text-sm text-muted-foreground">Painel da loja</p>
         <h1 className="mt-1 text-2xl font-semibold tracking-tight">
           Visão geral
@@ -176,35 +177,41 @@ export function DashboardContent() {
       </header>
 
       {metrics.isLoading ? (
-        <DashboardSkeleton />
+        <div className="space-y-4">
+          <LoadingFeedback />
+          <DashboardSkeleton />
+        </div>
       ) : (
         <>
-          {metrics.isError && (
-            <Card role="alert" className="p-5">
-              <p className="text-sm text-destructive">
-                {getRequestErrorMessage(
-                  metrics.error,
-                  data
-                    ? "Não foi possível atualizar as métricas. Os últimos dados carregados foram mantidos."
-                    : "Não foi possível carregar as métricas do painel. Confira sua conexão e tente novamente.",
-                )}
+          {metrics.isError &&
+            (data ? (
+              <p role="status" className="text-xs text-muted-foreground">
+                Não foi possível atualizar os dados do painel agora. Exibindo os dados carregados anteriormente.
               </p>
-              <Button
-                type="button"
-                variant="outline"
-                disabled={metrics.isFetching}
-                onClick={() => void metrics.refetch()}
-                className="mt-3"
-              >
-                <RefreshCw
-                  size={16}
-                  className={metrics.isFetching ? "animate-spin" : undefined}
-                  aria-hidden="true"
-                />
-                Tentar novamente
-              </Button>
-            </Card>
-          )}
+            ) : (
+              <Card role="alert" className="p-5">
+                <p className="text-sm text-destructive">
+                  {getRequestErrorMessage(
+                    metrics.error,
+                    "Não foi possível carregar as métricas do painel. Confira sua conexão e tente novamente.",
+                  )}
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={metrics.isFetching}
+                  onClick={() => void metrics.refetch()}
+                  className="mt-3"
+                >
+                  <RefreshCw
+                    size={16}
+                    className={metrics.isFetching ? "animate-spin" : undefined}
+                    aria-hidden="true"
+                  />
+                  Tentar novamente
+                </Button>
+              </Card>
+            ))}
 
           {data && (
             <>

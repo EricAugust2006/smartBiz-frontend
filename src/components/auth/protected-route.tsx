@@ -3,6 +3,7 @@
 import { useEffect, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
+import { LoadingFeedback } from "@/components/ui/loading-feedback";
 import { useAuthStore } from "@/store/useAuthStore";
 
 export function ProtectedRoute({ children }: { children: ReactNode }) {
@@ -21,6 +22,7 @@ export function ProtectedRoute({ children }: { children: ReactNode }) {
         aria-busy="true"
         className="mx-auto max-w-2xl space-y-6 p-6"
       >
+        <LoadingFeedback />
         <Skeleton className="h-8 w-40" />
         <Skeleton className="h-96 w-full rounded-2xl" />
         <span role="status" className="sr-only">

@@ -1,0 +1,1 @@
+export const themeInitializationScript = `(()=>{let saved=null;try{saved=localStorage.getItem("smartbiz-theme")}catch{}const dark=saved==="dark"||(saved!=="light"&&matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.classList.toggle("dark",dark);document.documentElement.style.colorScheme=dark?"dark":"light"})()`;

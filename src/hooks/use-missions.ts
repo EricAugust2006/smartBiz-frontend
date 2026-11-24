@@ -8,6 +8,11 @@ import {
   type Mission,
   type MissionStatus,
 } from "@/lib/missions";
+import {
+  getQueryCacheOptions,
+  invalidateCache,
+  setCachedQuery,
+} from "@/lib/query-cache";
 import { useAuthStore } from "@/store/useAuthStore";
 
 function useMissionsScope() {
@@ -22,12 +27,17 @@ function useMissionsScope() {
 
 export function useMissions() {
   const scope = useMissionsScope();
+  const queryKey = scope.queryKey;
   return useQuery({
-    ...scope,
+    queryKey,
+    enabled: scope.enabled,
     retry: false,
+    ...getQueryCacheOptions<Mission[]>(queryKey),
     queryFn: async ({ signal }): Promise<Mission[]> => {
       const { data } = await api.get<unknown>("/missions", { signal });
-      return missionListSchema.parse(data);
+      const missions = missionListSchema.parse(data);
+      setCachedQuery(queryKey, missions);
+      return missions;
     },
   });
 }
@@ -42,7 +52,12 @@ export function useCreateMission() {
       await api.post("/missions", payload);
     },
     onSuccess: () => {
+      invalidateCache(["missions", queryKey[1]]);
+      invalidateCache(["dashboard", "metrics", queryKey[1]]);
       void queryClient.invalidateQueries({ queryKey });
+      void queryClient.invalidateQueries({
+        queryKey: ["dashboard", "metrics", queryKey[1]],
+      });
     },
   });
 }
@@ -71,7 +86,12 @@ export function useUpdateMissionStatus() {
           mission.id === id ? { ...mission, status } : mission,
         ),
       );
+      invalidateCache(["missions", queryKey[1]]);
+      invalidateCache(["dashboard", "metrics", queryKey[1]]);
       void queryClient.invalidateQueries({ queryKey });
+      void queryClient.invalidateQueries({
+        queryKey: ["dashboard", "metrics", queryKey[1]],
+      });
     },
   });
 }

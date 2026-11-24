@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import * as Dialog from "@radix-ui/react-dialog";
 import { PackageOpen, Pencil, Plus, RefreshCw, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -15,12 +16,21 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ProductFormSheet } from "@/components/products/product-form-sheet";
+import { LoadingFeedback } from "@/components/ui/loading-feedback";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useProducts, useUpdateProduct } from "@/hooks/use-products";
 import { getRequestErrorMessage } from "@/lib/axios";
 import { currencyFormatter } from "@/lib/sales";
 import { productPriceInCents, type Product } from "@/lib/products";
 import { useToast } from "@/components/ui/toaster";
+
+const ProductFormSheet = dynamic(
+  () =>
+    import("@/components/products/product-form-sheet").then(
+      (module) => module.ProductFormSheet,
+    ),
+  { loading: () => <LoadingFeedback /> },
+);
 
 function ProductListSkeleton() {
   return (
@@ -164,7 +174,8 @@ export function ProductsManager() {
   const [adjustAmount, setAdjustAmount] = useState("1");
   const { toast } = useToast();
   const allProducts = useProducts();
-  const products = useProducts(search, category === "all" ? "" : category);
+  const debouncedSearch = useDebouncedValue(search, 250);
+  const products = useProducts(debouncedSearch, category === "all" ? "" : category);
   const update = useUpdateProduct();
   const categories = useMemo(
     () =>
@@ -225,17 +236,21 @@ export function ProductsManager() {
     }
   }
 
-  const visibleProducts = (products.data ?? []).filter(
-    (p) =>
-      filter === "all" ||
-      (filter === "low" && p.trackStock && p.quantity <= p.minQuantity) ||
-      (filter === "expiry" &&
-        p.expiresAt &&
-        Math.ceil(
-          (new Date(`${p.expiresAt.slice(0, 10)}T00:00:00`).getTime() -
-            new Date(new Date().toDateString()).getTime()) /
-            86400000,
-        ) <= 7),
+  const visibleProducts = useMemo(
+    () =>
+      (products.data ?? []).filter(
+        (p) =>
+          filter === "all" ||
+          (filter === "low" && p.trackStock && p.quantity <= p.minQuantity) ||
+          (filter === "expiry" &&
+            p.expiresAt &&
+            Math.ceil(
+              (new Date(`${p.expiresAt.slice(0, 10)}T00:00:00`).getTime() -
+                new Date(new Date().toDateString()).getTime()) /
+                86400000,
+            ) <= 7),
+      ),
+    [filter, products.data],
   );
 
   return (
@@ -312,17 +327,23 @@ export function ProductsManager() {
       </div>
 
       {products.isLoading ? (
-        <ProductListSkeleton />
+        <div className="space-y-4">
+          <LoadingFeedback />
+          <ProductListSkeleton />
+        </div>
       ) : (
         <>
-          {products.isError && (
+          {products.isError && products.data && (
+            <p role="status" className="text-xs text-muted-foreground">
+              Não foi possível atualizar os produtos agora. Exibindo os dados carregados anteriormente.
+            </p>
+          )}
+          {products.isError && !products.data && (
             <Card role="alert" className="p-5">
               <p className="text-sm text-destructive">
                 {getRequestErrorMessage(
                   products.error,
-                  products.data
-                    ? "Não foi possível atualizar os produtos. Os últimos dados carregados foram mantidos."
-                    : "Não foi possível carregar os produtos. Confira sua conexão e tente novamente.",
+                  "Não foi possível carregar os produtos. Confira sua conexão e tente novamente.",
                 )}
               </p>
               <Button
@@ -488,15 +509,17 @@ export function ProductsManager() {
           ) : null}
         </>
       )}
-      <ProductFormSheet
-        key={editing?.id ?? "new-product"}
-        open={formOpen}
-        product={editing}
-        onOpenChange={(open) => {
-          setFormOpen(open);
-          if (!open) setEditing(null);
-        }}
-      />
+      {formOpen && (
+        <ProductFormSheet
+          key={editing?.id ?? "new-product"}
+          open={formOpen}
+          product={editing}
+          onOpenChange={(open) => {
+            setFormOpen(open);
+            if (!open) setEditing(null);
+          }}
+        />
+      )}
       <Dialog.Root
         open={Boolean(adjusting)}
         onOpenChange={(open) => !open && setAdjusting(null)}

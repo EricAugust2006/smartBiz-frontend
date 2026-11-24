@@ -6,6 +6,7 @@ import {
   dashboardMetricsSchema,
   type DashboardMetrics,
 } from "@/lib/dashboard-metrics";
+import { getQueryCacheOptions, setCachedQuery } from "@/lib/query-cache";
 import { useAuthStore } from "@/store/useAuthStore";
 
 export function useDashboardMetrics() {
@@ -13,15 +14,20 @@ export function useDashboardMetrics() {
   const userId = useAuthStore((state) => state.user?.id);
   const accessToken = useAuthStore((state) => state.accessToken);
 
+  const queryKey = ["dashboard", "metrics", tenantId, userId] as const;
+
   return useQuery({
-    queryKey: ["dashboard", "metrics", tenantId, userId],
+    queryKey,
     enabled: Boolean(tenantId && accessToken),
     retry: false,
+    ...getQueryCacheOptions<DashboardMetrics>(queryKey),
     queryFn: async ({ signal }): Promise<DashboardMetrics> => {
       const { data } = await api.get<unknown>("/dashboard/metrics", {
         signal,
       });
-      return dashboardMetricsSchema.parse(data);
+      const metrics = dashboardMetricsSchema.parse(data);
+      setCachedQuery(queryKey, metrics);
+      return metrics;
     },
   });
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -25,14 +26,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/toaster";
-import {
-  RedemptionQrDialog,
-  type RedemptionDetails,
-} from "@/components/sales/redemption-qr-dialog";
+import type { RedemptionDetails } from "@/components/sales/redemption-qr-dialog";
 import { useCustomerByPhone } from "@/hooks/use-customer-by-phone";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useProducts } from "@/hooks/use-products";
 import { api, getRequestErrorMessage } from "@/lib/axios";
 import { productPriceInCents, type Product } from "@/lib/products";
+import { invalidateCache } from "@/lib/query-cache";
 import {
   currencyFormatter,
   customerPhoneSchema,
@@ -47,6 +47,15 @@ import {
   type SaleFormValues,
 } from "@/lib/sales";
 import { useAuthStore } from "@/store/useAuthStore";
+import { LoadingFeedback } from "@/components/ui/loading-feedback";
+
+const RedemptionQrDialog = dynamic(
+  () =>
+    import("@/components/sales/redemption-qr-dialog").then(
+      (module) => module.RedemptionQrDialog,
+    ),
+  { loading: () => <LoadingFeedback /> },
+);
 
 const defaultValues: SaleFormInput = { amount: "0", customerPhone: "" };
 type CartLine = { product: Product; quantity: number };
@@ -60,9 +69,10 @@ export function NovaVenda() {
   const userId = useAuthStore((state) => state.user?.id);
   const [lookupPhone, setLookupPhone] = useState("");
   const [productSearch, setProductSearch] = useState("");
+  const debouncedProductSearch = useDebouncedValue(productSearch, 250);
   const [cart, setCart] = useState<CartLine[]>([]);
   const [redemption, setRedemption] = useState<RedemptionDetails | null>(null);
-  const products = useProducts(productSearch);
+  const products = useProducts(debouncedProductSearch);
   const customer = useCustomerByPhone(lookupPhone);
   const submissionLock = useRef(false);
   const pendingSale = useRef<(CreateSaleInput & { tenantId: string }) | null>(
@@ -95,7 +105,14 @@ export function NovaVenda() {
           description: `${currencyFormatter.format(payload.amount)} registrados com sucesso.`,
         });
       }
+      invalidateCache(["sales", tenantId]);
+      invalidateCache(["products", tenantId]);
+      invalidateCache(["dashboard", "metrics", tenantId]);
       void queryClient.invalidateQueries({ queryKey: ["sales", tenantId] });
+      void queryClient.invalidateQueries({ queryKey: ["products", tenantId] });
+      void queryClient.invalidateQueries({
+        queryKey: ["dashboard", "metrics", tenantId],
+      });
       void queryClient.invalidateQueries({ queryKey: ["customers", tenantId] });
     },
   });
@@ -105,7 +122,7 @@ export function NovaVenda() {
   const errors = form.formState.errors;
   const amountInput =
     useWatch({ control: form.control, name: "amount" }) ?? "0";
-  const manualCents = Number(amountInput || "0");
+  const manualCents = useMemo(() => Number(amountInput || "0"), [amountInput]);
   const cartCents = useMemo(
     () =>
       cart.reduce(
@@ -115,7 +132,14 @@ export function NovaVenda() {
       ),
     [cart],
   );
-  const totalCents = cartCents + manualCents;
+  const totalCents = useMemo(
+    () => cartCents + manualCents,
+    [cartCents, manualCents],
+  );
+  const cartItemCount = useMemo(
+    () => cart.reduce((sum, line) => sum + line.quantity, 0),
+    [cart],
+  );
   const { setFocus } = form;
 
   useEffect(() => {
@@ -184,8 +208,10 @@ export function NovaVenda() {
     sale.reset();
   }
 
-  const activeProducts =
-    products.data?.filter((product) => product.isActive) ?? [];
+  const activeProducts = useMemo(
+    () => products.data?.filter((product) => product.isActive) ?? [],
+    [products.data],
+  );
 
   return (
     <>
@@ -232,17 +258,25 @@ export function NovaVenda() {
                   className="sm:max-w-56"
                 />
               </div>
+              {products.isError && products.data && (
+                <p role="status" className="text-xs text-muted-foreground">
+                  Não foi possível atualizar os produtos agora. Exibindo os dados carregados anteriormente.
+                </p>
+              )}
               {products.isLoading ? (
-                <div
-                  className="grid gap-2 sm:grid-cols-2"
-                  aria-label="Carregando produtos"
-                  aria-busy="true"
-                >
-                  {[0, 1, 2, 3].map((item) => (
-                    <Skeleton key={item} className="h-20 rounded-xl" />
-                  ))}
+                <div className="space-y-3">
+                  <LoadingFeedback />
+                  <div
+                    className="grid gap-2 sm:grid-cols-2"
+                    aria-label="Carregando produtos"
+                    aria-busy="true"
+                  >
+                    {[0, 1, 2, 3].map((item) => (
+                      <Skeleton key={item} className="h-20 rounded-xl" />
+                    ))}
+                  </div>
                 </div>
-              ) : products.isError ? (
+              ) : products.isError && !products.data ? (
                 <div
                   role="alert"
                   className="rounded-xl border border-destructive/30 bg-destructive-soft p-3 text-sm text-destructive"
@@ -319,8 +353,7 @@ export function NovaVenda() {
                 className="space-y-2 rounded-xl bg-muted/60 p-3"
               >
                 <h2 id={`${id}-cart-title`} className="text-sm font-semibold">
-                  Carrinho ({cart.reduce((sum, line) => sum + line.quantity, 0)}{" "}
-                  itens)
+                  Carrinho ({cartItemCount} itens)
                 </h2>
                 {cart.map((line) => (
                   <div
@@ -488,11 +521,7 @@ export function NovaVenda() {
                 className="min-h-6 text-sm"
               >
                 {lookupPhone && customer.isLoading ? (
-                  <div className="flex items-center gap-2">
-                    <Skeleton className="h-4 w-4 rounded-full" />
-                    <Skeleton className="h-4 w-40" />
-                    <span className="sr-only">Buscando cliente…</span>
-                  </div>
+                  <LoadingFeedback label="Carregando..." />
                 ) : lookupPhone && customer.isError ? (
                   <div className="space-y-1 text-muted-foreground">
                     <p>
@@ -566,12 +595,14 @@ export function NovaVenda() {
           </form>
         </CardContent>
       </Card>
-      <RedemptionQrDialog
-        redemption={redemption}
-        onOpenChange={(open) => {
-          if (!open) setRedemption(null);
-        }}
-      />
+      {redemption && (
+        <RedemptionQrDialog
+          redemption={redemption}
+          onOpenChange={(open) => {
+            if (!open) setRedemption(null);
+          }}
+        />
+      )}
     </>
   );
 }
